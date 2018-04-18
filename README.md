@@ -2,9 +2,9 @@
 
 The description of files for the Proxy Lab:
 
-proxy.c 
-csapp.h
-csapp.c
+proxy.c\n
+csapp.h\n
+csapp.c\n
     These are starter files.  csapp.c and csapp.h are described in
     your textbook. 
 
