@@ -14,7 +14,7 @@ csapp.c
     Please use `port-for-user.pl' or 'free-port.sh' to generate
     unique ports for your proxy or tiny server. 
 
-Makefile
+Makefile  
     This is the makefile that builds the proxy program.  Type "make"
     to build your solution, or "make clean" followed by "make" for a
     fresh build. 
@@ -23,22 +23,22 @@ Makefile
     in. You can modify it any way you like. Your instructor will use your
     Makefile to build your proxy from source.
 
-port-for-user.pl
+port-for-user.pl  
     Generates a random port for a particular user
     usage: ./port-for-user.pl <userID>
 
-free-port.sh
+free-port.sh  
     Handy script that identifies an unused TCP port that you can use
     for your proxy or tiny. 
     usage: ./free-port.sh
 
-driver.sh
+driver.sh  
     The autograder for Basic, Concurrency, and Cache.        
     usage: ./driver.sh
 
-nop-server.py
+nop-server.py  
      helper for the autograder.         
 
-tiny
+tiny  
     Tiny Web server from the CS:APP text
 
