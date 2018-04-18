@@ -20,19 +20,34 @@
 static const char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
 
 void parseURL(char* url) {
-  char address[90];
-  char* hostname;
-  char* query;
+  char address[100];
+  char hostname[100];
+  char path[100];
+  char query[100];
+  char httpr[100];
 
-  strcpy(address, url);
-  sscanf(address, "http://%s/", hostname);
-  printf("Hostname: %s\n\n", hostname);
+  /* Find out where everything is */
+  const char *start_of_url = strchr(url, '/') + 2;
+  const char *start_of_query = strchr(start_of_url, '/');
+  const char *end_of_query = strchr(start_of_query, ' ');
 
+  /* Copy the strings into our memory */
+  strncpy(address, start_of_url, 100);
+  strncpy(path, start_of_query, 100);
+  strncpy(httpr, end_of_query, 100);
+
+
+  /* Null terminators (because strncpy does not provide them) */
+  hostname[sizeof(hostname)] = 0;
+  query[sizeof(query)] = 0;
+
+  sscanf(address, "%[^/]s", hostname);
+  sscanf(path, "%s ", query);
+  printf("Hostname: %s\n\nQuery: %s\n\n", hostname, query);
 }
 
-int main()
-{
-    parseURL("http://www.cmu.edu/hub/index.html");
+int main() {
+    parseURL("GET http://www.cmu.edu/hub/index.html HTTP/1.1");
     printf("%s", user_agent_hdr);
     return 0;
 }
