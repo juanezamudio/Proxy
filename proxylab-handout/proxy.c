@@ -20,13 +20,15 @@
 
 /* You won't lose style points for including this long line in your code */
 static const char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
+static const char *host_header = "Host: "
+
+char address[100];
+char hostname[100];
+char path[100];
+char query[100];
+char httpr[100];
 
 void parseURL(char* url) {
-  char address[100];
-  char hostname[100];
-  char path[100];
-  char query[100];
-  char httpr[100];
 
   /* Find out where everything is */
   const char *start_of_url = strchr(url, '/') + 2;
@@ -48,15 +50,29 @@ void parseURL(char* url) {
   printf("Hostname: %s\n\nQuery: %s\n\n", hostname, query);
 }
 
+void httpValid(char* url) {
+
+}
+
+void readRequest() {
+
+}
+
+void readResponse() {
+
+}
+
 void GET() {
 
 }
 
 void POST() {
-  
+
 }
 
-int main() {
+int main(int argc, char **argv) {
+    int port = atoi(argv[0]);
+
     parseURL("GET http://www.cmu.edu/hub/index.html HTTP/1.1");
     printf("%s", user_agent_hdr);
     return 0;
