@@ -2,7 +2,7 @@
  * A proxy server that connects with a web server and browser
  *
  * Juan Zamudio - jzamudio
- * Cleo Foreman - cforeman
+ * Cleo Foreman - cforman
  *
  * Proxy Port #: 45806
  * Tiny Server Port #: 45807
@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <resolv.h>
 #include <netdb.h>
+#include <unistd.h>
 
 /* Recommended max cache and object sizes */
 #define MAX_CACHE_SIZE 1049000
@@ -24,10 +25,10 @@
 #define PROXY_HTTP "HTTP/1.0"
 
 /* You won't lose style points for including this long line in your code */
-static const char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
-static const char *host_hdr = "Host: ";
-static const char *connection_hdr = "Connection: close";
-static const char *proxy_connection_hdr = "Proxy-Connection: close";
+//static const char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
+//static const char *host_hdr = "Host: ";
+//static const char *connection_hdr = "Connection: close";
+//static const char *proxy_connection_hdr = "Proxy-Connection: close";
 
 typedef struct {
   char* hostname;
@@ -47,8 +48,8 @@ addr_url parseURL(char* url) {
   /* Find out where everything is */
   const char *start_of_url = strchr(url, '/') + 2;
   const char *start_of_query = strchr(start_of_url, '/');
-  const char *start_of_port = strchar(start_of_query, ':');
-  const char *end_of_query = strchr(start_of_query, ' ');
+  const char *start_of_port = strchr(start_of_query, ':');
+  const char *end_of_query = strchr(start_of_port, ' ');
 
   /* Copy the strings into our memory */
   strncpy(address, start_of_url, 100);
@@ -58,13 +59,13 @@ addr_url parseURL(char* url) {
 
 
   /* Null terminators (because strncpy does not provide them) */
-  hostname[sizeof(hostname)] = 0;
-  query[sizeof(query)] = 0;
-  port[sizeof(port)] = 0;
+  hostname[sizeof(hostname)-1] = 0;
+  query[sizeof(query)-1] = 0;
+  port[sizeof(port)-1] = 0;
 
-  sscanf(address, "%[^/]s", address.hostname);
-  sscanf(path, "%s ", address.query);
-  sscanf(port, "%:s", address.port)
+  sscanf(address, "%[^/]s", address_url.hostname);
+  sscanf(path, "%s ", address_url.query);
+  sscanf(port, ":%s", address_url.port_number);
 
   printf("Hostname: %s\n\nQuery: %s\n\nPort: %s\n\n", hostname, query, port);
 
@@ -140,7 +141,7 @@ int open_listenfd(char *port) {
     return -1;
 
   /* Make it a listening socket ready to accept conn. requests */
-  if (listen(listenfd, LISTENQ) < 0) {
+  if (listen(listenfd, 0) < 0) { // backlog = 0
     close(listenfd);
     return -1;
   }
@@ -151,13 +152,15 @@ int open_listenfd(char *port) {
 int main(int argc, char **argv) {
     char* port = argv[1];
 
-    parseURL("GET http://www.cmu.edu/hub/index.html: HTTP/1.1");
+    addr_url parsedURL = parseURL("GET http://www.cmu.edu/hub/index.html: HTTP/1.1");
 
-    int clientfd = open_clientfd(hostname, port);
+    //int clientfd =
+    open_clientfd(parsedURL.hostname, parsedURL.port_number);
     int serverfd = open_listenfd(port);
 
-    accept(listenfd, SA *addr, int *addrlen);
+    //accept(listenfd, SA *addr, int *addrlen);
+    accept(serverfd, NULL, NULL);
 
-    printf("%s", user_agent_hdr);
+    //printf("%s", user_agent_hdr);
     return 0;
 }
