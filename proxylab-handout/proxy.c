@@ -29,21 +29,19 @@
 //static const char *host_hdr = "Host: ";
 //static const char *connection_hdr = "Connection: close";
 //static const char *proxy_connection_hdr = "Proxy-Connection: close";
+//
+int open_clientfd(char* hostname, char* port);
+int open_listenfd(char* port);
 
-typedef struct {
-  char* hostname;
-  char* port_number;
-  char* query;
-} addr_url;
+char hostname[1000];
+char request_port[1000];
+char query[1000];
 
-addr_url parseURL(char* url) {
-  addr_url address_url;
-  char address[100];
-  char hostname[100];
-  char path[100];
-  char query[100];
-  char port[100];
-  char httpr[100];
+void parseURL(char* url) {
+  char address[1000];
+  char path[1000];
+  char port[1000];
+  char httpr[1000];
 
   /* Find out where everything is */
   const char *start_of_url = strchr(url, '/') + 2;
@@ -52,111 +50,117 @@ addr_url parseURL(char* url) {
   const char *end_of_query = strchr(start_of_port, ' ');
 
   /* Copy the strings into our memory */
-  strncpy(address, start_of_url, 100);
-  strncpy(path, start_of_query, 100);
-  strncpy(port, start_of_port, 100);
-  strncpy(httpr, end_of_query, 100);
+  strncpy(address, start_of_url, 1000);
+  strncpy(path, start_of_query, 1000);
+  strncpy(port, start_of_port, 1000);
+  strncpy(httpr, end_of_query, 1000);
 
 
   /* Null terminators (because strncpy does not provide them) */
   hostname[sizeof(hostname)-1] = 0;
   query[sizeof(query)-1] = 0;
-  port[sizeof(port)-1] = 0;
 
-  sscanf(address, "%[^/]s", address_url.hostname);
-  sscanf(path, "%s ", address_url.query);
-  sscanf(port, ":%s", address_url.port_number);
+  sscanf(address, "%[^/]s", hostname);
+  sscanf(path, "%s ", query);
 
-  printf("Hostname: %s\n\nQuery: %s\n\nPort: %s\n\n", hostname, query, port);
-
-  return address_url;
-}
-
-int open_clientfd(char *hostname, char *port) {
-  int clientfd;
-  struct addrinfo hints, *listp, *p;
-
-  /* Get a list of potential server addresses */
-  memset(&hints, 0, sizeof(struct addrinfo));
-
-  hints.ai_socktype = SOCK_STREAM; /* Open a connection */
-  hints.ai_flags = AI_NUMERICSERV; /* Using numeric port arg. */
-  hints.ai_flags |= AI_ADDRCONFIG; /* Recommended for connections */
-
-  getaddrinfo(hostname, port, &hints, &listp);
-
-  /* Walk the list for one that we can successfully connect to */
-  for (p = listp; p; p = p->ai_next) {
-    /* Create a socket descriptor */
-    if ((clientfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
-      continue; /* Socket failed, try the next */
-
-    /* Connect to the server */
-    if (connect(clientfd, p->ai_addr, p->ai_addrlen) != -1)
-      break; /* Success */
-
-    close(clientfd); /* Connect failed, try another */
+  if (port != NULL) {
+    port[sizeof(port)-1] = 0;
+    sscanf(port, ":%s", request_port);
+  } else {
+    strcpy(port, "80");
+    sscanf(port, "%s", request_port);
   }
 
-  /* Clean up */
-  freeaddrinfo(listp);
-
-  if (!p) /* All connects failed */
-    return -1;
-  else /* The last connect succeeded */
-    return clientfd;
+  // printf("Hostname: %s\n\nQuery: %s\n\nPort: %s\n\n", hostname, query, request_port);
 }
 
-int open_listenfd(char *port) {
-  struct addrinfo hints, *listp, *p;
-  int listenfd, optval=1;
-
-  /* Get a list of potential server addresses */
-  memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_socktype = SOCK_STREAM; /* Accept connect. */
-  hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG; /* On any IP addr */
-  hints.ai_flags |= AI_NUMERICSERV; /* Using port no. */
-  getaddrinfo(NULL, port, &hints, &listp);
-
-  /* Walk the list for one that we can bind to */
-  for (p = listp; p; p = p->ai_next) {
-    /* Create a socket descriptor */
-    if ((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
-      continue; /* Socket failed, try the next */
-
-    /* Eliminates "Address already in use" error from bind */
-    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
-
-    /* Bind the descriptor to the address */
-    if (bind(listenfd, p->ai_addr, p->ai_addrlen) == 0)
-      break; /* Success */
-
-    close(listenfd); /* Bind failed, try the next */
-  }
-
-  /* Clean up */
-  freeaddrinfo(listp);
-
-  if (!p) /* No address worked */
-    return -1;
-
-  /* Make it a listening socket ready to accept conn. requests */
-  if (listen(listenfd, 0) < 0) { // backlog = 0
-    close(listenfd);
-    return -1;
-  }
-
-  return listenfd;
-}
+// int open_clientfd(char *hostname, char *port) {
+//   int clientfd;
+//   struct addrinfo hints, *listp, *p;
+//
+//   /* Get a list of potential server addresses */
+//   memset(&hints, 0, sizeof(struct addrinfo));
+//
+//   hints.ai_socktype = SOCK_STREAM; /* Open a connection */
+//   hints.ai_flags = AI_NUMERICSERV; /* Using numeric port arg. */
+//   hints.ai_flags |= AI_ADDRCONFIG; /* Recommended for connections */
+//
+//   getaddrinfo(hostname, port, &hints, &listp);
+//
+//   /* Walk the list for one that we can successfully connect to */
+//   for (p = listp; p; p = p->ai_next) {
+//     /* Create a socket descriptor */
+//     if ((clientfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
+//       continue; /* Socket failed, try the next */
+//
+//     /* Connect to the server */
+//     if (connect(clientfd, p->ai_addr, p->ai_addrlen) != -1)
+//       break; /* Success */
+//
+//     close(clientfd); /* Connect failed, try another */
+//   }
+//
+//   /* Clean up */
+//   freeaddrinfo(listp);
+//
+//   if (!p) /* All connects failed */
+//     return -1;
+//   else /* The last connect succeeded */
+//     return clientfd;
+// }
+//
+// int open_listenfd(char *port) {
+//   struct addrinfo hints, *listp, *p;
+//   int listenfd, optval=1;
+//
+//   /* Get a list of potential server addresses */
+//   memset(&hints, 0, sizeof(struct addrinfo));
+//   hints.ai_socktype = SOCK_STREAM; /* Accept connect. */
+//   hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG; /* On any IP addr */
+//   hints.ai_flags |= AI_NUMERICSERV; /* Using port no. */
+//   getaddrinfo(NULL, port, &hints, &listp);
+//
+//   /* Walk the list for one that we can bind to */
+//   for (p = listp; p; p = p->ai_next) {
+//     /* Create a socket descriptor */
+//     if ((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
+//       continue; /* Socket failed, try the next */
+//
+//     /* Eliminates "Address already in use" error from bind */
+//     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
+//
+//     /* Bind the descriptor to the address */
+//     if (bind(listenfd, p->ai_addr, p->ai_addrlen) == 0)
+//       break; /* Success */
+//
+//     close(listenfd); /* Bind failed, try the next */
+//   }
+//
+//   /* Clean up */
+//   freeaddrinfo(listp);
+//
+//   if (!p) /* No address worked */
+//     return -1;
+//
+//   /* Make it a listening socket ready to accept conn. requests */
+//   if (listen(listenfd, 0) < 0) { // backlog = 0
+//     close(listenfd);
+//     return -1;
+//   }
+//
+//   return listenfd;
+// }
 
 int main(int argc, char **argv) {
-    char* port = argv[1];
+    char* listening_port = argv[1];
 
-    addr_url parsedURL = parseURL("GET http://www.cmu.edu/hub/index.html: HTTP/1.1");
+    parseURL("GET http://www.cmu.edu/hub/index.html HTTP/1.1");
+
+    printf("Hostname: %s\n\nRequest_Port: %s\n\nListening_Port: %s\n\n", hostname, request_port, listening_port);
 
     //int clientfd =
-    open_clientfd(parsedURL.hostname, parsedURL.port_number);
-    int serverfd = open_listenfd(port);
+    open_clientfd(hostname, request_port);
+    int serverfd = open_listenfd(listening_port);
 
     //accept(listenfd, SA *addr, int *addrlen);
     accept(serverfd, NULL, NULL);
