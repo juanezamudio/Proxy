@@ -22,7 +22,7 @@
 #define PROXY_PORT 61206
 #define SERVER_PORT 61207
 #define DEFAULT_PORT 80
-#define PROXY_HTTP "HTTP/1.0"
+#define PROXY_HTTP " HTTP/1.0"
 
 /* You won't lose style points for including this long line in your code */
 //static const char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
@@ -72,6 +72,17 @@ void parseURL(char* url) {
   }
 
   // printf("Hostname: %s\n\nQuery: %s\n\nPort: %s\n\n", hostname, query, request_port);
+}
+
+char* sendRequest(char* query) {
+
+  char* result = malloc(strlen("GET ")+strlen(query)+strlen(PROXY_HTTP)+1);
+
+  strcat(result, "GET ");
+  strcat(result, query);
+  strcat(result, PROXY_HTTP);
+
+  return result;
 }
 
 // int open_clientfd(char *hostname, char *port) {
@@ -152,18 +163,19 @@ void parseURL(char* url) {
 // }
 
 int main(int argc, char **argv) {
-    char* listening_port = argv[1];
+    // char* listening_port = argv[1];
 
     parseURL("GET http://www.cmu.edu/hub/index.html HTTP/1.1");
+    printf("%s\n", sendRequest(query));
 
-    printf("Hostname: %s\n\nRequest_Port: %s\n\nListening_Port: %s\n\n", hostname, request_port, listening_port);
+    // printf("Hostname: %s\n\nRequest_Port: %s\n\nListening_Port: %s\n\n", hostname, request_port, listening_port);
 
     //int clientfd =
-    open_clientfd(hostname, request_port);
-    int serverfd = open_listenfd(listening_port);
+    // open_clientfd(hostname, request_port);
+    // int serverfd = open_listenfd(listening_port);
 
     //accept(listenfd, SA *addr, int *addrlen);
-    accept(serverfd, NULL, NULL);
+    // accept(serverfd, NULL, NULL);
 
     //printf("%s", user_agent_hdr);
     return 0;
