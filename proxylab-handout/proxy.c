@@ -56,13 +56,8 @@ static const char *proxy_connection_hdr = "\r\nProxy-Connection: close\r\n\r\n";
 // }
 
 int server(int num_args, char* parsed_input[], char* headers) {
-  int listenfd, connfd;
-  socklen_t clientlen;
-  struct sockaddr_storage clientaddr; /* room for any addr */
-  char client_hostname[MAXLINE], client_port[MAXLINE];
-
   size_t n;
-  int serverfd;
+  int clientfd;
   char *host, *port, *query, buf[MAXLINE];
   char get_request[MAXLINE];
   rio_t rio;
@@ -78,19 +73,19 @@ int server(int num_args, char* parsed_input[], char* headers) {
 
   printf("%s", get_request);
 
-  listenfd = Open_listenfd(port); //HTTP Request Port
+  clientfd = Open_clientfd(host, port); //HTTP Request Port
+  Rio_readinitb(&rio, clientfd);
 
-  while((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0) {
+  printf("%s", get_request);
+
+  while(1) {
     printf("Web server received %d bytes\n", (int)n);
 
-    clientlen = sizeof(struct sockaddr_storage); /* Important! */
-    connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
-    Getnameinfo((SA *) &clientaddr, clientlen, client_hostname, MAXLINE, client_port, MAXLINE, 0);
-    printf("Connected to (%s, %s)\n", client_hostname, client_port);
-
-    Rio_writen(connfd, get_request, n);
-    Close(connfd);
+    Rio_writen(clientfd, get_request, n);
+    Rio_readlineb(&rio, buf, MAXLINE);
+    Fputs(buf, stdout);
   }
+  Close(clientfd);
   exit(0);
 }
 
