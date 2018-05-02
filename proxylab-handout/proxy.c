@@ -79,7 +79,7 @@ static const char *proxy_connection_hdr = "\r\nProxy-Connection: close\r\n\r\n";
 // }
 /* $end serve_static */
 
-int server(int num_args, char* parsed_input[], char* headers, int connfd) {
+void server(int num_args, char* parsed_input[], char* headers, int connfd) {
   size_t n;
   int clientfd;
   char *host, *port, *query, buf[MAXLINE];
@@ -104,13 +104,12 @@ int server(int num_args, char* parsed_input[], char* headers, int connfd) {
   Rio_writen(clientfd, get_request, strlen(get_request));
   // serve_static(connfd, query, strlen(query));
 
-  while((n = Rio_readnb(&rio, buf, MAXLINE)) != 0) {
+  while((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0) {
     printf("Web server received %d bytes\n", (int)n);
 
     Rio_writen(connfd, buf, n);
   }
   Close(clientfd);
-  exit(0);
 }
 
 void parseURL(char* url, int connfd) {
@@ -196,7 +195,8 @@ void isValid(char buf[], int connfd) {
 
   if (check) {
     parseURL(buf, connfd);
-  } else {
+  }
+  else {
     printf("Invalid request!! Good try though! Try again? Maybe? :^)");
   }
 }
