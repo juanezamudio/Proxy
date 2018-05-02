@@ -34,6 +34,51 @@ static const char *host_hdr = "Host: ";
 static const char *connection_hdr = "\r\nConnection: close";
 static const char *proxy_connection_hdr = "\r\nProxy-Connection: close\r\n\r\n";
 
+/*
+ * serve_static - copy a file back to the client
+ */
+ /*
+  * get_filetype - derive file type from file name
+  */
+ // void get_filetype(char *filename, char *filetype)
+ // {
+ //   if (strstr(filename, ".html"))
+ //      strcpy(filetype, "text/html");
+ //   else if (strstr(filename, ".gif"))
+ //      strcpy(filetype, "image/gif");
+ //   else if (strstr(filename, ".png"))
+ //      strcpy(filetype, "image/png");
+ //   else if (strstr(filename, ".jpg"))
+ //      strcpy(filetype, "image/jpeg");
+ //   else
+ //      strcpy(filetype, "text/plain");
+ // }
+
+/* $begin serve_static */
+// void serve_static(int fd, char *filename, int filesize)
+// {
+//     char filetype[MAXLINE], buf[MAXBUF];
+//
+//     /* Send response headers to client */
+//     get_filetype(filename, filetype);       //line:netp:servestatic:getfiletype
+//     // sprintf(buf, "HTTP/1.0 200 OK\r\n");    //line:netp:servestatic:beginserve
+//     // sprintf(buf, "%sServer: Tiny Web Server\r\n", buf);
+//     // sprintf(buf, "%sConnection: close\r\n", buf);
+//     // sprintf(buf, "%sContent-length: %d\r\n", buf, filesize);
+//     sprintf(buf, "Content-type: %s\r\n\r\n", buf, filetype);
+//     Rio_writen(fd, buf, strlen(buf));       //line:netp:servestatic:endserve
+//     printf("Response headers:\n");
+//     printf("%s", buf);
+//
+//     /* Send response body to client */
+//     // srcfd = Open(filename, O_RDONLY, 0);    //line:netp:servestatic:open
+//     // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);//line:netp:servestatic:mmap
+//     // Close(srcfd);                           //line:netp:servestatic:close
+//     // Rio_writen(fd, srcp, filesize);         //line:netp:servestatic:write
+//     // Munmap(srcp, filesize);                 //line:netp:servestatic:munmap
+// }
+/* $end serve_static */
+
 int server(int num_args, char* parsed_input[], char* headers, int connfd) {
   size_t n;
   int clientfd;
@@ -57,8 +102,9 @@ int server(int num_args, char* parsed_input[], char* headers, int connfd) {
 
   printf("%s", get_request);
   Rio_writen(clientfd, get_request, strlen(get_request));
+  // serve_static(connfd, query, strlen(query));
 
-  while((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0) {
+  while((n = Rio_readnb(&rio, buf, MAXLINE)) != 0) {
     printf("Web server received %d bytes\n", (int)n);
 
     Rio_writen(connfd, buf, n);
@@ -79,6 +125,8 @@ void parseURL(char* url, int connfd) {
   char *parsedInput[NUM_ARGS];
   char headers[MAXLINE];
   char my_url[MAXLINE];
+  char *savepointer;
+  char *token;
 
   strcpy(my_url, url);
   printf("%s", my_url);
@@ -107,8 +155,14 @@ void parseURL(char* url, int connfd) {
     strcpy(port, "80");
     sscanf(port, "%s", request_port);
   } else {
-    sscanf(hostname, ":%s", request_port);
+    savepointer = hostname;
+    while((token = strtok_r(savepointer, ":", &savepointer))) {
+      sscanf(token, "%s", request_port);
+    }
+  //  sscanf(hostname, ":\%s", request_port);
   }
+
+  printf("%s\n", request_port);
 
   sscanf(hostname, "%[^:]s", hostname);
 
@@ -156,20 +210,18 @@ void proxy(int connfd) {
   while((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0) {
     printf("Proxy server received %d bytes\n", (int)n);
     isValid(buf, connfd);
-
   }
 }
 
-/* thread routine */
-void *my_thread(void *connfd_pointer)
-{
+
+void *my_thread(void *connfd_pointer) {
     int connfd = *((int *)connfd_pointer);
-    printf("New thread created! fd = %d >>>>>>>>>>>>>>>>>>\n", connfd);
+    printf("Thread created: %d\n", connfd);
     Pthread_detach(pthread_self());
     Free(connfd_pointer);
     proxy(connfd);
     Close(connfd);
-    printf("Thread is closing! fd = %d <<<<<<<<<<<<<<<<<<<<<<<<\n", connfd);
+    printf("Thread closed: %d\n", connfd);
     return NULL;
 }
 
