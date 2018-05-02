@@ -33,29 +33,7 @@ static const char *host_hdr = "Host: ";
 static const char *connection_hdr = "\r\nConnection: close";
 static const char *proxy_connection_hdr = "\r\nProxy-Connection: close\r\n\r\n";
 
-// int client(int num_args, char* parsed_input[]) {
-//   int clientfd;
-//   char *host, *port, *query, buf[MAXLINE];
-//   rio_t rio;
-//
-//   host = parsed_input[0];
-//   port = parsed_input[1];
-//   query = parsed_input[2];
-//
-//   clientfd = Open_clientfd(host, port);
-//   Rio_readinitb(&rio, clientfd);
-//
-//   while (Fgets(buf, MAXLINE, stdin) != NULL) {
-//     Rio_writen(clientfd, buf, strlen(buf));
-//     Rio_readlineb(&rio, buf, MAXLINE);
-//     Fputs(buf, stdout);
-//   }
-//
-//   Close(clientfd);
-//   exit(0);
-// }
-
-int server(int num_args, char* parsed_input[], char* headers) {
+int server(int num_args, char* parsed_input[], char* headers, int connfd) {
   size_t n;
   int clientfd;
   char *host, *port, *query, buf[MAXLINE];
@@ -77,19 +55,18 @@ int server(int num_args, char* parsed_input[], char* headers) {
   Rio_readinitb(&rio, clientfd);
 
   printf("%s", get_request);
+  Rio_writen(clientfd, get_request, strlen(get_request));
 
-  while(1) {
+  while((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0) {
     printf("Web server received %d bytes\n", (int)n);
 
-    Rio_writen(clientfd, get_request, n);
-    Rio_readlineb(&rio, buf, MAXLINE);
-    Fputs(buf, stdout);
+    Rio_writen(connfd, buf, n);
   }
   Close(clientfd);
   exit(0);
 }
 
-void parseURL(char* url) {
+void parseURL(char* url, int connfd) {
   int NUM_ARGS = 3;
   char hostname[MAXLINE];
   char request_port[MAXLINE];
@@ -143,39 +120,11 @@ void parseURL(char* url) {
 
   printf("%s", headers);
 
-  server(NUM_ARGS, parsedInput, headers);
+  server(NUM_ARGS, parsedInput, headers, connfd);
 // GET http://www.cmu.edu/hub/index.html HTTP/1.1
 }
 
-/*
- * serve_static - copy a file back to the client
- */
-/* $begin serve_static */
-// void serve_static(int fd, char *filename, int filesize)
-// {
-//     int srcfd;
-//     char *srcp, filetype[MAXLINE], buf[MAXBUF];
-//
-//     /* Send response headers to client */
-//     get_filetype(filename, filetype);       //line:netp:servestatic:getfiletype
-//     sprintf(buf, "HTTP/1.0\r\n");    //line:netp:servestatic:beginserve
-//     sprintf(buf, "%sHost: Tiny Web Server\r\n", buf); // host
-//     sprintf(buf, "%sConnection: close\r\n", buf); // useragent
-//     sprintf(buf, "%sContent-length: %d\r\n", buf, filesize); // connection
-//     sprintf(buf, "%sContent-type: %s\r\n\r\n", buf, filetype); // proxy connection
-//     Rio_writen(fd, buf, strlen(buf));       //line:netp:servestatic:endserve
-//     printf("Response headers:\n");
-//     printf("%s", buf);
-//
-//     /* Send response body to client */
-//     srcfd = Open(filename, O_RDONLY, 0);    //line:netp:servestatic:open
-//     srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);//line:netp:servestatic:mmap
-//     Close(srcfd);                           //line:netp:servestatic:close
-//     Rio_writen(fd, srcp, filesize);         //line:netp:servestatic:write
-//     Munmap(srcp, filesize);                 //line:netp:servestatic:munmap
-// }
-
-void isValid(char buf[]) {
+void isValid(char buf[], int connfd) {
   char get[MAXLINE];
   char url[MAXLINE];
   char http[MAXLINE];
@@ -188,7 +137,7 @@ void isValid(char buf[]) {
   int check = !(strcmp(get, GET) + strcmp(http, EXPECTED_HTTP));
 
   if (check) {
-    parseURL(buf);
+    parseURL(buf, connfd);
   } else {
     printf("Invalid request!! Good try though! Try again? Maybe? :^)");
     // strcpy(error, "Invalid request!! Good try though! Try again? Maybe? :^)");
@@ -205,7 +154,7 @@ void proxy(int connfd) {
 
   while((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0) {
     printf("Proxy server received %d bytes\n", (int)n);
-    isValid(buf);
+    isValid(buf, connfd);
 
   }
 }
