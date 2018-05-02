@@ -15,6 +15,7 @@
 #include <resolv.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "csapp.h"
 
 /* Recommended max cache and object sizes */
@@ -77,6 +78,10 @@ void parseURL(char* url, int connfd) {
   char httpr[MAXLINE];
   char *parsedInput[NUM_ARGS];
   char headers[MAXLINE];
+  char my_url[MAXLINE];
+
+  strcpy(my_url, url);
+  printf("%s", my_url);
 
   /* Find out where everything is */
   const char *start_of_url = strchr(url, '/') + 2;
@@ -128,21 +133,17 @@ void isValid(char buf[], int connfd) {
   char get[MAXLINE];
   char url[MAXLINE];
   char http[MAXLINE];
-  char error[MAXLINE];
 
   sscanf(buf, "%s %s %s", get, url, http);
 
 
   // check to make sure if it is valid input, send to parse URL if it is
-  int check = !(strcmp(get, GET) + strcmp(http, EXPECTED_HTTP));
+  int check = !(strcmp(get, GET) & strcmp(http, EXPECTED_HTTP));
 
   if (check) {
     parseURL(buf, connfd);
   } else {
     printf("Invalid request!! Good try though! Try again? Maybe? :^)");
-    // strcpy(error, "Invalid request!! Good try though! Try again? Maybe? :^)");
-    // printf("%s", error);
-    // return &error;
   }
 }
 
@@ -159,20 +160,37 @@ void proxy(int connfd) {
   }
 }
 
+/* thread routine */
+void *my_thread(void *connfd_pointer)
+{
+    int connfd = *((int *)connfd_pointer);
+    printf("New thread created! fd = %d >>>>>>>>>>>>>>>>>>\n", connfd);
+    Pthread_detach(pthread_self());
+    Free(connfd_pointer);
+    proxy(connfd);
+    Close(connfd);
+    printf("Thread is closing! fd = %d <<<<<<<<<<<<<<<<<<<<<<<<\n", connfd);
+    return NULL;
+}
+
 int main(int argc, char **argv) {
-  int listenfd, connfd;
+  int listenfd, *connfd;
   socklen_t clientlen;
   struct sockaddr_storage clientaddr; /* room for any addr */
   char client_hostname[MAXLINE], client_port[MAXLINE];
+  pthread_t yarn;
 
   listenfd = Open_listenfd(argv[1]);
+
   while (1) {
     clientlen = sizeof(struct sockaddr_storage); /* Important! */
-    connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
+    connfd = Malloc(sizeof(int));
+    *connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
     Getnameinfo((SA *) &clientaddr, clientlen, client_hostname, MAXLINE, client_port, MAXLINE, 0);
     printf("Connected to (%s, %s)\n", client_hostname, client_port);
-    proxy(connfd);
-    Close(connfd);
+    Pthread_create(&yarn, NULL, my_thread, connfd);
+    // proxy(connfd);
+    // Close(connfd);
   }
   exit(0);
 }
